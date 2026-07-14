@@ -1,0 +1,12 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Maidem\PdfExport\:
+    resource: "../Classes/*"
+    exclude: "../Classes/Domain/Model/*"
+
+  Maidem\PdfExport\Controller\PdfExportController:
+    public: true
