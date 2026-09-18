@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Maidem\PdfExport\DataProcessing;
 
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\ContentObject\DataProcessorInterface;
 
@@ -15,6 +14,10 @@ use TYPO3\CMS\Frontend\ContentObject\DataProcessorInterface;
  */
 class PdfExportDataProcessor implements DataProcessorInterface
 {
+    public function __construct(
+        private readonly ConnectionPool $connectionPool,
+    ) {}
+
     public function process(
         ContentObjectRenderer $cObj,
         array $contentObjectConfiguration,
@@ -23,7 +26,7 @@ class PdfExportDataProcessor implements DataProcessorInterface
     ): array {
         // Fetch all news records; join with pages to determine type (project vs logbook)
         // by the page title (e.g. "Projekte" → project, "Logbuch" → logbook).
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tx_news_domain_model_news');
 
         $newsItems = $queryBuilder

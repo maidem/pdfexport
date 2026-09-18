@@ -108,7 +108,8 @@ class PdfExportController extends ActionController implements LoggerAwareInterfa
         $browsershot = Browsershot::html($html)
             ->setChromePath($chromePath)
             ->showBackground()
-            ->format('A4');
+            ->format('A4')
+            ->windowSize(794, 1123);
 
         if ($noSandbox) {
             $browsershot->noSandbox();
@@ -117,6 +118,7 @@ class PdfExportController extends ActionController implements LoggerAwareInterfa
         try {
             $pdf = $browsershot->pdf();
         } catch (\Throwable $e) {
+            // unsichtbar — der Frontend-Request bekam nur ein stummes 500-JSON.
             $this->logger?->error('PDF generation failed: ' . $e->getMessage(), ['exception' => $e]);
 
             return $this->responseFactory->createResponse(500)

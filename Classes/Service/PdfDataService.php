@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace Maidem\PdfExport\Service;
 
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Service to fetch data for the PDF Export from the database.
  */
 class PdfDataService
 {
+    public function __construct(
+        private readonly ConnectionPool $connectionPool,
+    ) {}
+
     public function getAboutContent(int $homePid = 0): string
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
         $queryBuilder
             ->select('bodytext')
             ->from('tt_content')
@@ -46,7 +49,7 @@ class PdfDataService
      */
     public function getContactContent(): array
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
         $row = $queryBuilder
             ->select(
                 'gripsraum_contactinfo_contact_name AS contact_name',
@@ -73,12 +76,13 @@ class PdfDataService
      */
     public function getStoryContent(): array
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
         $row = $queryBuilder
             ->select('header', 'bodytext')
             ->from('tt_content')
             ->where(
-                $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('gripsraum_banner')),
+                // banner + text-cta, beide tragen den Story-/Profiltext
+                $queryBuilder->expr()->in('CType', $queryBuilder->createNamedParameter(['gripsraum_banner', 'gripsraum_textcta'], \Doctrine\DBAL\ArrayParameterType::STRING)),
                 $queryBuilder->expr()->neq('bodytext', $queryBuilder->createNamedParameter('')),
                 $queryBuilder->expr()->isNotNull('bodytext'),
                 $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(0, \Doctrine\DBAL\ParameterType::INTEGER)),
@@ -99,7 +103,7 @@ class PdfDataService
             return [];
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('gripsraum_faq_faq_items');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('gripsraum_faq_faq_items');
         $items = $queryBuilder
             ->select('question', 'answer')
             ->from('gripsraum_faq_faq_items')
@@ -121,7 +125,7 @@ class PdfDataService
             return [];
         }
 
-        $qb = GeneralUtility::makeInstance(ConnectionPool::class)
+        $qb = $this->connectionPool
             ->getQueryBuilderForTable('gripsraum_skills_skills');
 
         $rows = $qb
@@ -159,7 +163,7 @@ class PdfDataService
             return [];
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_news_domain_model_news');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_news_domain_model_news');
         $rows = $queryBuilder
             ->select('uid', 'title', 'teaser AS description', 'bodytext', 'datetime')
             ->from('tx_news_domain_model_news')
@@ -180,7 +184,7 @@ class PdfDataService
             return [];
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_news_domain_model_news');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_news_domain_model_news');
         $rows = $queryBuilder
             ->select('uid', 'title AS header', 'teaser AS teaser_text', 'datetime AS project_date', 'bodytext')
             ->from('tx_news_domain_model_news')
@@ -209,7 +213,7 @@ class PdfDataService
      */
     public function classifyNewsUid(int $uid): string
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tx_news_domain_model_news');
 
         $row = $queryBuilder
@@ -236,7 +240,7 @@ class PdfDataService
 
     private function getLatestContentRecord(string $ctype): ?array
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
         $row = $queryBuilder
             ->select('uid', 'header')
             ->from('tt_content')
