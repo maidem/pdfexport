@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Spatie\Browsershot\Browsershot;
+use TYPO3\CMS\Core\RateLimiter\RateLimiterFactoryInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\View\ViewFactoryData;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -21,9 +22,12 @@ class PdfExportController extends ActionController implements LoggerAwareInterfa
 {
     use LoggerAwareTrait;
 
+    private const MAX_SECTIONS = 40;
+
     public function __construct(
         private PdfDataService $pdfDataService,
-        private FluidViewFactory $viewFactory
+        private FluidViewFactory $viewFactory,
+        private RateLimiterFactoryInterface $rateLimiterFactory
     ) {}
 
     /**
@@ -31,6 +35,19 @@ class PdfExportController extends ActionController implements LoggerAwareInterfa
      */
     public function generateAction(): ResponseInterface
     {
+        // Each request starts a Chromium process, so cap requests per IP.
+        $limit = $this->rateLimiterFactory
+            ->createRequestBasedLimiter($this->request, [
+                'id' => 'pdf-export',
+                'policy' => 'sliding_window',
+                'limit' => 5,
+                'interval' => '1 minute',
+            ])
+            ->consume();
+        if (!$limit->isAccepted()) {
+            return $this->responseFactory->createResponse(429)->withHeader('Retry-After', '60');
+        }
+
         $sectionsInput = $this->request->hasArgument('sections')
             ? $this->request->getArgument('sections')
             : ($this->request->getParsedBody()['sections'] ?? []);
@@ -40,7 +57,10 @@ class PdfExportController extends ActionController implements LoggerAwareInterfa
 
         // Build one block per cart entry, in the exact selection order.
         $blocks = [];
-        foreach ($sectionsInput as $value) {
+        foreach (array_slice((array)$sectionsInput, 0, self::MAX_SECTIONS) as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
             if ($value === 'info') {
                 $blocks[] = ['type' => 'info', 'data' => $this->pdfDataService->getAboutContent($rootPid)];
             } elseif ($value === 'contact') {
@@ -109,7 +129,9 @@ class PdfExportController extends ActionController implements LoggerAwareInterfa
             ->setChromePath($chromePath)
             ->showBackground()
             ->format('A4')
-            ->windowSize(794, 1123);
+            ->windowSize(794, 1123)
+            // Summary.html is static markup; no script has to run in Chromium.
+            ->disableJavascript();
 
         if ($noSandbox) {
             $browsershot->noSandbox();

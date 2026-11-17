@@ -15,7 +15,7 @@ defined('TYPO3') or die('Access denied.');
     'CType'
 );
 
-// Define the 3 custom columns
+// The two tile labels
 $GLOBALS['TCA']['tt_content']['columns']['maidem_pdfexport_info_label'] = [
     'label' => 'Kachel „Info": Kategorie-Label (z. B. Vitals)',
     'config' => [
@@ -34,33 +34,6 @@ $GLOBALS['TCA']['tt_content']['columns']['maidem_pdfexport_tech_label'] = [
         'default' => 'Stack',
     ],
 ];
-$GLOBALS['TCA']['tt_content']['columns']['maidem_pdfexport_tech_title'] = [
-    'label' => 'Kachel „Skills": Titel (z. B. Skills)',
-    'config' => [
-        'type'    => 'input',
-        'size'    => 30,
-        'eval'    => 'trim',
-        'default' => 'Skills',
-    ],
-];
-$GLOBALS['TCA']['tt_content']['columns']['maidem_pdfexport_projects_label'] = [
-    'label' => 'Kachel „Projekte": Kategorie-Label (z. B. Projekte)',
-    'config' => [
-        'type'    => 'input',
-        'size'    => 30,
-        'eval'    => 'trim',
-        'default' => 'Projekte',
-    ],
-];
-$GLOBALS['TCA']['tt_content']['columns']['maidem_pdfexport_logbook_label'] = [
-    'label' => 'Kachel „Logbuch": Kategorie-Label (z. B. Logbuch)',
-    'config' => [
-        'type'    => 'input',
-        'size'    => 30,
-        'eval'    => 'trim',
-        'default' => 'Logbuch',
-    ],
-];
 
 // Define which fields are shown in the backend form for this CType
 $GLOBALS['TCA']['tt_content']['types']['maidem_pdfexport'] = [
@@ -74,9 +47,6 @@ $GLOBALS['TCA']['tt_content']['types']['maidem_pdfexport'] = [
         --div--;Kachel-Beschriftungen,
             maidem_pdfexport_info_label,
             maidem_pdfexport_tech_label,
-            maidem_pdfexport_tech_title,
-            maidem_pdfexport_projects_label,
-            maidem_pdfexport_logbook_label,
         --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
             --palette--;;hidden,
             --palette--;;access,
